@@ -1,0 +1,189 @@
+name: mock-production-service
+
+
+services:
+  gateway:
+    image: gateway
+    ports: 
+      - "8000:8000"
+    depends_on:
+      redis:
+        condition: service_healthy
+        restart: true
+      postgres:
+        condition: service_healthy
+        restart: true
+    build: ./services/gateway
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 5m
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+      start_interval: 5s
+    networks:
+      - sim-network
+
+  order-service:
+    image: order-service
+    expose:
+     - "8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+        restart: true
+      redis:
+        condition: service_healthy
+        restart: true
+    build: ./services/order-service
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 5m
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+      start_interval: 5s
+    networks:
+      - sim-network
+  payment-service:
+    image: payment-service
+    expose:
+     - "8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+        restart: true
+    build: ./services/payment-service
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 5m
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+      start_interval: 5s
+    networks:
+      - sim-network
+  fraud-service:
+    image: fraud-service
+    expose:
+     - "8000"
+    depends_on:
+      redis:
+        condition: service_healthy
+        restart: true
+    build: ./services/fraud-service
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 5m
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+      start_interval: 5s
+    networks:
+      - sim-network
+  user-service:
+    image: user-service
+    expose:
+     - "8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+        restart: true
+    build: ./services/user-service
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 5m
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+      start_interval: 5s
+    networks:
+      - sim-network
+  catalog-service:
+    image: catalog-service
+    expose:
+     - "8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+        restart: true
+    build: ./services/catalog-service
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 5m
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+      start_interval: 5s
+    networks:
+      - sim-network
+  inventory-service:
+    image: inventory-service
+    expose:
+     - "8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+        restart: true
+    build: ./services/inventory-service
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 5m
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+      start_interval: 5s
+    networks:
+      - sim-network
+  redis:
+    image: redis
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 1m #on production on other envs we could use lower value
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+      start_interval: 5s
+    networks:
+      - sim-network
+  postgres:
+    image: postgres:18
+    healthcheck:
+      test: ["CMD", "pg_isready"]
+      interval: 5m
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+      start_interval: 5s
+    networks:
+      - sim-network
+  toxiproxy:
+    image: ghcr.io/shopify/toxiproxy
+    ports: 
+      - "8474:8474"
+    expose:
+      - "20000-20010"
+    depends_on:
+      gateway:
+        condition: service_healthy
+        restart: true
+      redis:
+        condition: service_healthy
+        restart: true
+      postgres:
+        condition: service_healthy
+        restart: true
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8474/"]
+      interval: 5m
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+      start_interval: 5s
+    networks:
+      - sim-network
+
+networks:
+  sim-network:
+    driver: bridge
+  
