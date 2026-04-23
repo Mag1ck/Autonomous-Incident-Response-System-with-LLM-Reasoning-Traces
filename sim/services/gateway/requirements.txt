@@ -1,2 +1,8 @@
 fastapi
 uvicorn
+httpx
+asyncio
+sqlalchemy
+alembic
+asyncpg
+dotenv
