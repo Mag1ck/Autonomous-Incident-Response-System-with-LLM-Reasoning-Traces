@@ -1,5 +1,4 @@
 import os
-from dotenv import load_dotenv
 from fastapi import FastAPI
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.ext.asyncio import async_sessionmaker
@@ -9,12 +8,9 @@ from pydantic import BaseModel
 from contextlib import asynccontextmanager
 
 
-load_dotenv()
-
-PG_USER = os.getenv('PG_USER')
-PG_PASS = os.getenv('PG_PASS')
-PG_DB = os.getenv('PG_DB')
-
+PG_USER = os.getenv("POSTGRES_USER")
+PG_PASS = os.getenv("POSTGRES_PASSWORD")
+PG_DB = os.getenv("POSTGRES_DB")
 
 engine = create_async_engine(f"postgresql+asyncpg://{PG_USER}:{PG_PASS}@postgres/{PG_DB}")
 async_session = async_sessionmaker(engine, expire_on_commit=False)
