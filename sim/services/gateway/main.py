@@ -2,9 +2,27 @@ from fastapi import FastAPI
 import httpx
 import asyncio
 import time
+from pydantic import BaseModel
 
 app = FastAPI()
 client = httpx.AsyncClient()
+
+class OrderRequest(BaseModel):
+    user_id: str
+    sku: str
+    quantity: int
+
+class OrderResponse(BaseModel):
+    order_id: int
+    user_id: str
+    sku: str
+    quantity: int
+    order_status: str
+    payment_status: str
+    fraud_status: str
+    created_at: datetime
+    updated_at: datetime
+    rejection_reason: str | None
 
 async def get_service_health(service):
     start = time.monotonic()
@@ -60,3 +78,10 @@ async def payment_service_health():
 async def user_service_health():
     return await get_service_health("user-service")
 
+@app.post("/orders", response_model = OrderResponse)
+async def post_order(order: OrderRequest):
+    r = await client.post(f'http://order-service:8000/orders', json = order.dict())
+    if r.status_code == 201:
+        return r.json()
+    else:
+        raise Exception("Order not created")

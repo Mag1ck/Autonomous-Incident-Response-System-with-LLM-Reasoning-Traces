@@ -1,5 +1,5 @@
 import os
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.ext.asyncio import async_sessionmaker
 from pydantic import BaseModel
@@ -42,7 +42,7 @@ app = FastAPI()
 def get_health():
     return {"status": "healthy"}
 
-@app.post("/orders", status_code=201, response_model=OrderResponse)
+@app.post("/orders", status_code=201, response_model = OrderResponse)
 async def post_order(order: Order):
     now = datetime.now(timezone.utc)
     new_order = OrderTable(user_id = order.user_id, sku = order.sku, quantity = order.quantity, order_status = "pending",
@@ -58,3 +58,13 @@ async def post_order(order: Order):
              "payment_status": new_order.payment_status, "fraud_status": new_order.fraud_status,
              "created_at": new_order.created_at, "updated_at": new_order.updated_at,
              "rejection_reason": new_order.rejection_reason}
+
+@app.get("/orders/{order_id}", response_model = OrderResponse)
+async def get_order(order_id: int):
+    async with async_session() as session:
+        async with session.begin():
+            response = await session.get(OrderTable, order_id)
+            if response is not None:
+                return response
+            else:
+                raise HTTPException(status_code = 404, detail = "Order not found")

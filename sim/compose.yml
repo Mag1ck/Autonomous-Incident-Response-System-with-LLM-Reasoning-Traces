@@ -18,7 +18,7 @@ services:
         restart: true
     build: ./services/gateway
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=2)"]
       interval: 5m
       timeout: 5s
       retries: 3
@@ -63,7 +63,7 @@ services:
     networks:
       - sim-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=2)"]
       interval: 5m
       timeout: 5s
       retries: 3
@@ -80,7 +80,7 @@ services:
         restart: true
     build: ./services/payment-service
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=2)"]
       interval: 5m
       timeout: 5s
       retries: 3
@@ -99,7 +99,7 @@ services:
         restart: true
     build: ./services/fraud-service
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=2)"]
       interval: 5m
       timeout: 5s
       retries: 3
@@ -118,7 +118,7 @@ services:
         restart: true
     build: ./services/user-service
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=2)"]
       interval: 5m
       timeout: 5s
       retries: 3
@@ -137,7 +137,7 @@ services:
         restart: true
     build: ./services/catalog-service
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=2)"]
       interval: 5m
       timeout: 5s
       retries: 3
@@ -156,7 +156,7 @@ services:
         restart: true
     build: ./services/inventory-service
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=2)"]
       interval: 5m
       timeout: 5s
       retries: 3
