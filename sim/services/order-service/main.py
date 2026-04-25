@@ -2,10 +2,9 @@ import os
 from fastapi import FastAPI
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.ext.asyncio import async_sessionmaker
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-from sqlalchemy import Integer, String
 from pydantic import BaseModel
-from contextlib import asynccontextmanager
+from databases import OrderTable
+from datetime import datetime, timezone
 
 
 PG_USER = os.getenv("POSTGRES_USER")
@@ -16,46 +15,46 @@ engine = create_async_engine(f"postgresql+asyncpg://{PG_USER}:{PG_PASS}@postgres
 async_session = async_sessionmaker(engine, expire_on_commit=False)
 
 
-class Base(DeclarativeBase):
-    pass
 
-class OrderTable(Base):
-    __tablename__ = "orders"
-
-    order_id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    user_id: Mapped[str] = mapped_column(String, nullable=False)
-    sku: Mapped[str] = mapped_column(String, nullable=False)
-    quantity: Mapped[int] = mapped_column(Integer, nullable=False)
-    order_status: Mapped[str] = mapped_column(String, nullable=False)
-    payment_status: Mapped[str] = mapped_column(String, nullable=False)
-    fraud_status: Mapped[str] = mapped_column(String, nullable=False)
 
 class Order(BaseModel):
     user_id: str
     sku: str
     quantity: int
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-    yield
+class OrderResponse(BaseModel):
+    order_id: int
+    user_id: str
+    sku: str
+    quantity: int
+    order_status: str
+    payment_status: str
+    fraud_status: str
+    created_at: datetime
+    updated_at: datetime
+    rejection_reason: str | None
 
-app = FastAPI(lifespan = lifespan)
+
+app = FastAPI()
 
 
 @app.get("/health")
 def get_health():
     return {"status": "healthy"}
 
-@app.post("/orders")
+@app.post("/orders", status_code=201, response_model=OrderResponse)
 async def post_order(order: Order):
+    now = datetime.now(timezone.utc)
     new_order = OrderTable(user_id = order.user_id, sku = order.sku, quantity = order.quantity, order_status = "pending",
-                           payment_status = "pending", fraud_status = "pending")
+                           payment_status = "pending", fraud_status = "pending", created_at = now,
+                            updated_at = now)
     async with async_session() as session:
         async with session.begin():
             session.add(new_order)
             await session.flush()
     
-    return {"status": "success", "order_id": new_order.order_id, "user_id": new_order.user_id, "sku": new_order.sku,
-             "quantity": new_order.quantity}
+    return {"order_id": new_order.order_id, "user_id": new_order.user_id, "sku": new_order.sku,
+             "quantity": new_order.quantity, "order_status": new_order.order_status,
+             "payment_status": new_order.payment_status, "fraud_status": new_order.fraud_status,
+             "created_at": new_order.created_at, "updated_at": new_order.updated_at,
+             "rejection_reason": new_order.rejection_reason}

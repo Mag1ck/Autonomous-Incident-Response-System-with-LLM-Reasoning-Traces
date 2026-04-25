@@ -13,6 +13,9 @@ services:
       postgres:
         condition: service_healthy
         restart: true
+      order-service:
+        condition: service_healthy
+        restart: true
     build: ./services/gateway
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
@@ -21,6 +24,21 @@ services:
       retries: 3
       start_period: 40s
       start_interval: 5s
+    networks:
+      - sim-network
+
+  order-service-migration:
+    image: order-service
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    command: ["alembic", "upgrade", "head"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+        restart: true
+    restart: "no"
     networks:
       - sim-network
 
@@ -39,7 +57,11 @@ services:
       redis:
         condition: service_healthy
         restart: true
+      order-service-migration:
+        condition: service_completed_successfully
     build: ./services/order-service
+    networks:
+      - sim-network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 5m
@@ -47,8 +69,7 @@ services:
       retries: 3
       start_period: 40s
       start_interval: 5s
-    networks:
-      - sim-network
+
   payment-service:
     image: payment-service
     expose:
@@ -67,6 +88,7 @@ services:
       start_interval: 5s
     networks:
       - sim-network
+
   fraud-service:
     image: fraud-service
     expose:
@@ -85,6 +107,7 @@ services:
       start_interval: 5s
     networks:
       - sim-network
+
   user-service:
     image: user-service
     expose:
@@ -103,6 +126,7 @@ services:
       start_interval: 5s
     networks:
       - sim-network
+
   catalog-service:
     image: catalog-service
     expose:
@@ -121,6 +145,7 @@ services:
       start_interval: 5s
     networks:
       - sim-network
+
   inventory-service:
     image: inventory-service
     expose:
@@ -139,6 +164,7 @@ services:
       start_interval: 5s
     networks:
       - sim-network
+
   redis:
 #We set interval to 1m on production; on other envs we could use lower value
     image: redis
@@ -167,6 +193,7 @@ services:
       start_interval: 5s
     networks:
       - sim-network
+      
   toxiproxy:
     image: ghcr.io/shopify/toxiproxy
     ports: 
@@ -181,6 +208,9 @@ services:
         condition: service_healthy
         restart: true
       postgres:
+        condition: service_healthy
+        restart: true
+      order-service:
         condition: service_healthy
         restart: true
     healthcheck:

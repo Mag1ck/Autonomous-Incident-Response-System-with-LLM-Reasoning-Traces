@@ -1,6 +1,6 @@
 import asyncio
 from sqlalchemy.ext.asyncio import create_async_engine
-import asyncpg
+from sqlalchemy.ext.asyncio import async_sessionmaker
 import os
 from dotenv import load_dotenv
 
@@ -16,3 +16,5 @@ async def async_main():
     engine = create_async_engine(
         f"postgresql+asyncpg://{PG_USER}:{PG_PASS}@postgres/{PG_DB}"
     )
+    async_session = async_sessionmaker(engine, expire_on_commit=False)
+
