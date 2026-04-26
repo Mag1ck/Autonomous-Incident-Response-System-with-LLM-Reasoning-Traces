@@ -135,6 +135,9 @@ services:
       postgres:
         condition: service_healthy
         restart: true
+      inventory-service:
+        condition: service_healthy
+        restart: true
     build: ./services/catalog-service
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=2)"]
@@ -145,15 +148,37 @@ services:
       start_interval: 5s
     networks:
       - sim-network
+  
+  inventory-service-migration:
+    image: inventory-service
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    command: ["alembic", "upgrade", "head"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+        restart: true
+    restart: "no"
+    networks:
+      - sim-network  
 
   inventory-service:
     image: inventory-service
     expose:
      - "8000"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     depends_on:
       postgres:
         condition: service_healthy
         restart: true
+      inventory-service-migration:
+        condition: service_completed_successfully
+
     build: ./services/inventory-service
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=2)"]

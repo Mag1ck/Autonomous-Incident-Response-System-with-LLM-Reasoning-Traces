@@ -12,6 +12,8 @@ USER app
 # Copy in the source code
 COPY --chown=app:app main.py .
 COPY --chown=app:app databases.py .
+COPY --chown=app:app alembic/ ./alembic
+COPY --chown=app:app alembic.ini .
 EXPOSE 8000
 
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

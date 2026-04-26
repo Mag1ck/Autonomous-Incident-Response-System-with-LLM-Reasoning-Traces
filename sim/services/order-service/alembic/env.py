@@ -31,6 +31,12 @@ target_metadata = Base.metadata
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
 
+def include_object(object, name, type_, reflected, compare_to):
+    if type_ == "table":
+        return name in {"orders", "order_alembic_version"}
+    else:
+        return True
+
 
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode.
@@ -48,7 +54,9 @@ def run_migrations_offline() -> None:
         url = DATABASE_URL,
         target_metadata = target_metadata,
         literal_binds = True,
+        include_object = include_object,
         dialect_opts = {"paramstyle": "named"},
+        version_table="order_alembic_version"
     )
 
     with context.begin_transaction():
@@ -58,6 +66,8 @@ def do_run_migrations(connection):
     context.configure(
         connection = connection,
         target_metadata = target_metadata,
+        include_object = include_object,
+        version_table="order_alembic_version"
     )
 
     with context.begin_transaction():
