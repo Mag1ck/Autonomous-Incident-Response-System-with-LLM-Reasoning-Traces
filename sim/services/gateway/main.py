@@ -35,6 +35,19 @@ class OrderResponse(BaseModel):
     updated_at: datetime
     rejection_reason: str | None
 
+class CatalogResponse(BaseModel):
+    sku: str
+    name: str
+    description: str
+    price_in_cents: int
+    currency: str
+    attributes: dict
+    estimated_delivery_days: int | None
+    available_quantity: int
+    in_stock: bool
+    inventory_updated_at: datetime
+
+
 async def get_service_health(client, service):
     start = time.monotonic()
     try:
@@ -114,3 +127,17 @@ async def get_order(order_id: int):
         validated = OrderResponse.model_validate(body)
         return JSONResponse(content = validated.model_dump(mode = "json"), status_code = status_code)
     return JSONResponse(content = body, status_code = status_code)
+
+@app.get("/catalog/{sku}", response_model = CatalogResponse)
+async def get_product(sku: str):
+    try:
+        r = await app.state.client.get(f'http://catalog-service:8000/catalog/{sku}', timeout = 3)
+    except httpx.RequestError:
+        raise HTTPException(status_code = 502, detail = "Catalog service unavailable")
+    body = r.json()
+    status_code = r.status_code
+    if status_code == 200:
+        validated = CatalogResponse.model_validate(body)
+        return JSONResponse(content = validated.model_dump(mode = "json"), status_code = status_code)
+    return JSONResponse(content = body, status_code = status_code)
+

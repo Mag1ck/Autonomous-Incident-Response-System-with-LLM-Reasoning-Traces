@@ -16,6 +16,9 @@ services:
       order-service:
         condition: service_healthy
         restart: true
+      catalog-service:
+        condition: service_healthy
+        restart: true
     build: ./services/gateway
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=2)"]
