@@ -4,7 +4,7 @@ from datetime import datetime
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = 'insert_rows_revision'
+revision: str = 'insert_inventory_rows_revision'
 down_revision: Union[str, Sequence[str], None] = "ecb0be80bf25"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -24,14 +24,13 @@ inventory_items_table = sqlalchemy.Table(
 )
 
 def insert_rows(rows) -> None:
-    """insert rows into schema"""
     op.bulk_insert(inventory_items_table, rows)
 
 def delete_rows(rows) -> None:
-    """delete seeded rows from schema"""
+    skus = [row["sku"] for row in rows]
     op.execute(
         inventory_items_table.delete().where(
-            inventory_items_table.c.sku.in_(row["sku"] for row in rows)
+            inventory_items_table.c.sku.in_(skus)
         )
     )
     
