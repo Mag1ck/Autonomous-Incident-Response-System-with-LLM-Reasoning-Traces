@@ -52,7 +52,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
     expose:
-     - "8000"
+      - "8000"
     depends_on:
       postgres:
         condition: service_healthy
@@ -76,7 +76,7 @@ services:
   payment-service:
     image: payment-service
     expose:
-     - "8000"
+      - "8000"
     depends_on:
       postgres:
         condition: service_healthy
@@ -95,7 +95,7 @@ services:
   fraud-service:
     image: fraud-service
     expose:
-     - "8000"
+      - "8000"
     depends_on:
       redis:
         condition: service_healthy
@@ -114,7 +114,7 @@ services:
   user-service:
     image: user-service
     expose:
-     - "8000"
+      - "8000"
     depends_on:
       postgres:
         condition: service_healthy
@@ -148,7 +148,7 @@ services:
   catalog-service:
     image: catalog-service
     expose:
-     - "8000"
+      - "8000"
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -157,8 +157,8 @@ services:
       postgres:
         condition: service_healthy
         restart: true
-      inventory-service:
-        condition: service_healthy
+      toxiproxy-init:
+        condition: service_completed_successfully
         restart: true
       catalog-service-migration:
         condition: service_completed_successfully
@@ -191,7 +191,7 @@ services:
   inventory-service:
     image: inventory-service
     expose:
-     - "8000"
+      - "8000"
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -250,20 +250,46 @@ services:
     expose:
       - "20000-20010"
     depends_on:
-      gateway:
-        condition: service_healthy
-        restart: true
-      redis:
-        condition: service_healthy
-        restart: true
-      postgres:
-        condition: service_healthy
-        restart: true
-      order-service:
+      inventory-service:
         condition: service_healthy
         restart: true
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8474/"]
+    #We don't have curl on this image and don't relly need it so we can just check via cli if it works.
+      test: ["CMD", "/toxiproxy-cli", "list"]
+      interval: 5m
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+      start_interval: 5s
+    networks:
+      - sim-network
+
+  toxiproxy-init:
+    image: curlimages/curl:8.20.0
+    depends_on:
+      toxiproxy:
+        condition: service_healthy
+        restart: true
+    command:
+      - "-s"
+      - "-X"
+      - "POST"
+      - "http://toxiproxy:8474/populate"
+      - "-H"
+      - "Content-Type: application/json"
+      - "-d"
+      - '[{"name":"inventory","listen":"0.0.0.0:20000","upstream":"inventory-service:8000"}]'
+    restart: "no"
+    networks:
+      - sim-network
+
+  incident-service:
+    image: incident-service
+    expose:
+      - "8000"
+    build: ./services/incident-service
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=2)"]
       interval: 5m
       timeout: 5s
       retries: 3

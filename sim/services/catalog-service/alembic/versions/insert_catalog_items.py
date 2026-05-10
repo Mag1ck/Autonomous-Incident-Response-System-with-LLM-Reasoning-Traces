@@ -4,7 +4,7 @@ from datetime import datetime
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = 'insert_catalog_rows_revision'
+revision: str = "insert_catalog_rows_revision"
 down_revision: Union[str, Sequence[str], None] = "310dd1028380"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None

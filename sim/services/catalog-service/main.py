@@ -50,7 +50,7 @@ def get_health():
 
 async def get_inventory(sku: str):
     try:
-        r = await app.state.client.get(f'http://inventory-service:8000/inventory/{sku}', timeout = 3)
+        r = await app.state.client.get(f"http://toxiproxy:20000/inventory/{sku}", timeout = 1)
     except httpx.RequestError:
         raise HTTPException(status_code = 502, detail = "Inventory service unavailable")
     body = r.json()
