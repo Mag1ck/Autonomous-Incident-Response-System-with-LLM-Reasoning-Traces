@@ -99,7 +99,7 @@ async def emit_observation(observation: dict):
 async def call_downstream(request, method, url, service, operation, correlation_id, json_body = None):
     start = time.monotonic()
     try:
-        r = await app.state.client.request(method, url, timeout=3, json = json_body)
+        r = await app.state.client.request(method, url, timeout=3, json = json_body,  headers={'X-Correlation-ID': f"{correlation_id}"})
         output = {
         "event": "downstream_request",
         "route": f"{request.method} {request.scope['route'].path}",
