@@ -1,7 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from databases import InventoryItems
-from sqlalchemy.ext.asyncio import create_async_engine
-from sqlalchemy.ext.asyncio import async_sessionmaker
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from pydantic import BaseModel
 import os
 from datetime import datetime

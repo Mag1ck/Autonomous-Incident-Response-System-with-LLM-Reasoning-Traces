@@ -89,6 +89,7 @@ async def get_service_health(request, service, correlation_id):
         return {"service": f"{service}", "status": "unreachable", "latency": None, "error": "service_unreachable"}
     
 async def emit_observation(observation: dict):
+    observation["source"] = "gateway"
     print(json.dumps(observation))
     try:
         await app.state.client.request("POST", "http://incident-service:8000/observations", timeout=0.5, json = observation)

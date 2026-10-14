@@ -27,7 +27,8 @@ def group_observations(failures):
             failure["route"],
             failure["downstream_service"],
             failure.get("status_code"),
-            failure.get("error_type")
+            failure.get("error_type"),
+            failure.get("source")
         )
         if key not in grouped:
             grouped[key] = []
@@ -37,14 +38,13 @@ def group_observations(failures):
 def get_incidents(groups):
     incidents = []
     #hardcoded for now
-    service = "gateway"
     confidence = 0.6
     recommended_action = "pass"
     stat = "open"
     
     for key, events in groups.items():
-        route, downstream_service, status_code, error_type = key
-        incident_id = hashlib.sha256(f"{route}|{downstream_service}|{status_code}|{error_type}".encode("utf-8")).hexdigest()
+        route, downstream_service, status_code, error_type, source = key
+        incident_id = hashlib.sha256(f"{route}|{downstream_service}|{status_code}|{error_type}|{source}".encode("utf-8")).hexdigest()
         symptom = route + " returned " + str(status_code)
         suspected_dependency = downstream_service
         evidence = events
@@ -52,7 +52,7 @@ def get_incidents(groups):
         incident = {
         "incident_id": "inc_" + incident_id[0:12],
         "status": stat,
-        "affected_service": service,
+        "affected_service": source,
         "symptom": symptom,
         "suspected_dependency": suspected_dependency,
         "error_type": error_type,

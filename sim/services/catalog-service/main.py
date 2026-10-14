@@ -51,6 +51,7 @@ def get_health():
     return {"status": "healthy"}
 
 async def emit_observation(observation: dict):
+    observation["source"] = "catalog-service"
     print(json.dumps(observation))
     try:
         await app.state.client.request("POST", "http://incident-service:8000/observations", timeout=0.5, json = observation)

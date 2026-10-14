@@ -4,3 +4,4 @@ sqlalchemy
 alembic
 asyncpg
 dotenv
+email-validator
