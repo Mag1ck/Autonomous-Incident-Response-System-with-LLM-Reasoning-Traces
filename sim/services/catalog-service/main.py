@@ -73,6 +73,9 @@ async def get_inventory(sku: str, correlation_id: str):
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "uuid": f"{correlation_id}"
         }
+        if observ_output["status_code"] >= 500:
+            observ_output["error"] = "downstream_http_error"
+            observ_output["error_type"] = "http_status"
         await emit_observation(observ_output)
     except httpx.RequestError:
         observ_output = {
@@ -89,25 +92,12 @@ async def get_inventory(sku: str, correlation_id: str):
         }
         await emit_observation(observ_output)
         raise HTTPException(status_code = 502, detail = "Inventory service unavailable")
-    body = r.json()
     status_code = r.status_code
     if status_code == 200:
+        body = r.json()
         validated = InventoryResponse.model_validate(body)
         return validated
     else:
-        observ_output = {
-            "event": "downstream_request",
-            "route": "GET /inventory/{sku}",
-            "latency": (time.monotonic() - start),
-            "downstream_service": "inventory-service",
-            "operation": "get_inventory",
-            "status_code": status_code,
-            "error": "service_unavailable",
-            "error_type": "transport_error",
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-            "uuid": f"{correlation_id}"
-        }
-        await emit_observation(observ_output)
         raise HTTPException(status_code = 502, detail = "Inventory service unavailable")
 
 
@@ -121,17 +111,15 @@ async def get_product(sku: str, request: Request):
             response = await session.get(Product, sku)
             if response is not None:
                 response_inventory = await get_inventory(sku, correlation_id)
-                if response_inventory is not None:
-                    return {"sku": response_inventory.sku,
-                            "name": response.name,
-                            "description": response.description,
-                            "price_in_cents": response.price_in_cents,
-                            "currency": response.currency,
-                            "attributes": response.attributes,
-                            "estimated_delivery_days": response.estimated_delivery_days,
-                            "available_quantity": response_inventory.available_quantity,
-                            "in_stock": response_inventory.in_stock,
-                            "inventory_updated_at": response_inventory.updated_at}
-                raise HTTPException(status_code = 502, detail = "Inventory service unavailable")
+                return {"sku": response_inventory.sku,
+                        "name": response.name,
+                        "description": response.description,
+                        "price_in_cents": response.price_in_cents,
+                        "currency": response.currency,
+                        "attributes": response.attributes,
+                        "estimated_delivery_days": response.estimated_delivery_days,
+                        "available_quantity": response_inventory.available_quantity,
+                        "in_stock": response_inventory.in_stock,
+                        "inventory_updated_at": response_inventory.updated_at}
             else:
                 raise HTTPException(status_code = 404, detail = "Product not found")
